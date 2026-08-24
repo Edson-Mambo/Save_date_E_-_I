@@ -1,4 +1,4 @@
-const weddingDate = new Date('2027-01-05T15:00:00+02:00').getTime();
+const weddingDate = new Date('2026-12-05T15:00:00+02:00').getTime();
 const $ = id => document.getElementById(id);
 function updateCountdown(){
   const distance = weddingDate - Date.now();
@@ -8,4 +8,5 @@ function updateCountdown(){
   $('minutes').textContent=String(Math.floor(distance/60000)%60).padStart(2,'0');
   $('seconds').textContent=String(Math.floor(distance/1000)%60).padStart(2,'0');
 }
-updateCountdown(); setInterval(updateCountdown,1000);
+updateCountdown();
+setInterval(updateCountdown,1000);
