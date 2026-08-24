@@ -1,12 +1,1 @@
-const weddingDate = new Date('2026-12-05T15:00:00+02:00').getTime();
-const $ = id => document.getElementById(id);
-function updateCountdown(){
-  const distance = weddingDate - Date.now();
-  if(distance <= 0){ $('days').textContent='00'; $('hours').textContent='00'; $('minutes').textContent='00'; $('seconds').textContent='00'; return; }
-  $('days').textContent=String(Math.floor(distance/86400000)).padStart(2,'0');
-  $('hours').textContent=String(Math.floor(distance/3600000)%24).padStart(2,'0');
-  $('minutes').textContent=String(Math.floor(distance/60000)%60).padStart(2,'0');
-  $('seconds').textContent=String(Math.floor(distance/1000)%60).padStart(2,'0');
-}
-updateCountdown();
-setInterval(updateCountdown,1000);
+const weddingDate=new Date('2026-12-05T15:00:00+02:00').getTime();const $=id=>document.getElementById(id);function updateCountdown(){const d=weddingDate-Date.now();if(d<=0){['days','hours','minutes','seconds'].forEach(id=>$(id).textContent='00');return}$('days').textContent=String(Math.floor(d/86400000)).padStart(2,'0');$('hours').textContent=String(Math.floor(d/3600000)%24).padStart(2,'0');$('minutes').textContent=String(Math.floor(d/60000)%60).padStart(2,'0');$('seconds').textContent=String(Math.floor(d/1000)%60).padStart(2,'0')}updateCountdown();setInterval(updateCountdown,1000);document.addEventListener('DOMContentLoaded',()=>{document.body.classList.add('loaded');const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show')}),{threshold:.12});document.querySelectorAll('.welcome,.photo-feature,.quote,.date-section,.details,.inspiration,.rsvp').forEach(e=>io.observe(e));});
