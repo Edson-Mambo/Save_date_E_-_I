@@ -17,21 +17,47 @@ async function loadGuests(){
   const list=$('#guestList'); if(!list)return;
   if(!data?.length){list.innerHTML='<div class="guest-empty">Ainda não há convidados personalizados.</div>';return}
   const base=window.location.origin+window.location.pathname.replace(/admin\.html$/,'');
+  const messages=new Map();
   list.innerHTML=data.map(g=>{
     const names=g.guest_type==='couple'&&g.name2?esc(g.name1)+' &amp; '+esc(g.name2):esc(g.name1)+(g.name2?' &amp; '+esc(g.name2):'');
     const link=base+'?guest='+encodeURIComponent(g.token);
     const isSingle=g.guest_type==='single';
     const address=isSingle?'Querido(a) '+g.name1+',':'Queridos '+(g.guest_type==='couple'&&g.name2?g.name1+' & '+g.name2:g.name1)+',';
-    const message='🤍 *“O que Deus uniu, ninguém o separe.”*\n_— Marcos 10:9_\n\n'+address+'\n\n✨ Há momentos que passam… e há momentos que ficam para sempre no coração.\n\nA nossa história trouxe-nos até aqui, e agora estamos prestes a viver um dos capítulos mais bonitos das nossas vidas. ❤️\n\n📅 No dia *05 de Dezembro de 2026*, vamos celebrar o nosso amor, a nossa união e o começo de uma nova vida juntos. 💍✨\n\n🥂 '+(isSingle?'Queremos muito ter-te connosco':'Queremos muito ter-vos connosco')+' nesse dia tão especial, porque as pessoas que amamos fazem parte da nossa história. 🤍\n\n📌 *Guarda esta data com carinho.*\nO nosso grande dia está a chegar… ✨\n\n💌 Preparamos este pequeno convite especialmente para '+(isSingle?'ti':'vocês')+', com todo o nosso amor.\n\n🔗 *O NOSSO CONVITE*\n\n'+link+'\n\nCom muito amor,\n❤️ *Irina & Edson*';
-    const formattedMessage=message.replaceAll('\\\\n','\\n');
-    const wa='https://wa.me/?text='+encodeURIComponent(formattedMessage);
-    return '<article class="guest-card"><div><strong>'+names+'</strong><span>'+guestTypeLabel(g.guest_type)+' · '+g.guest_count+' pessoa(s)</span><span class="guest-link">'+esc(link)+'</span></div><div class="guest-actions"><select data-rsvp="'+g.id+'"><option value="pending" '+(g.rsvp_status==='pending'?'selected':'')+'>Pendente</option><option value="confirmed" '+(g.rsvp_status==='confirmed'?'selected':'')+'>Confirmado</option><option value="declined" '+(g.rsvp_status==='declined'?'selected':'')+'>Não poderá ir</option></select><button type="button" data-copy="'+escAttr(link)+'">Copiar link</button><button type="button" data-message="'+encodeURIComponent(formattedMessage)+'">Copiar mensagem</button><a class="guest-wa" href="'+escAttr(wa)+'" target="_blank" rel="noopener">Enviar WhatsApp</a><button type="button" data-delete="'+g.id+'">Apagar</button></div></article>'
+    const white='\u{1F90D}',sparkle='\u2728',calendar='\u{1F4C5}',ring='\u{1F48D}',champagne='\u{1F942}',pin='\u{1F4CC}',envelope='\u{1F48C}',linkIcon='\u{1F517}',heart='\u2764\uFE0F';
+    const message=`${white} *“O que Deus uniu, ninguém o separe.”*
+_— Marcos 10:9_
+
+${address}
+
+${sparkle} Há momentos que passam… e há momentos que ficam para sempre no coração.
+
+A nossa história trouxe-nos até aqui, e agora estamos prestes a viver um dos capítulos mais bonitos das nossas vidas. ${heart}
+
+${calendar} No dia *05 de Dezembro de 2026*, vamos celebrar o nosso amor, a nossa união e o começo de uma nova vida juntos. ${ring}${sparkle}
+
+${champagne} ${isSingle?'Queremos muito ter-te connosco':'Queremos muito ter-vos connosco'} nesse dia tão especial, porque as pessoas que amamos fazem parte da nossa história. ${white}
+
+${pin} *Guarda esta data com carinho.*
+O nosso grande dia está a chegar… ${sparkle}
+
+${envelope} Preparamos este pequeno convite especialmente para ${isSingle?'ti':'vocês'}, com todo o nosso amor.
+
+${linkIcon} *ABRIR O NOSSO CONVITE*
+
+${link}
+
+Com muito amor,
+${heart} *Irina & Edson*`;
+    messages.set(g.id,message);
+    const wa='https://wa.me/?text='+encodeURIComponent(message);
+    return '<article class="guest-card"><div><strong>'+names+'</strong><span>'+guestTypeLabel(g.guest_type)+' · '+g.guest_count+' pessoa(s)</span><span class="guest-link">'+esc(link)+'</span></div><div class="guest-actions"><select data-rsvp="'+g.id+'"><option value="pending" '+(g.rsvp_status==='pending'?'selected':'')+'>Pendente</option><option value="confirmed" '+(g.rsvp_status==='confirmed'?'selected':'')+'>Confirmado</option><option value="declined" '+(g.rsvp_status==='declined'?'selected':'')+'>Não poderá ir</option></select><button type="button" data-copy="'+escAttr(link)+'">Copiar link</button><button type="button" data-message-id="'+g.id+'">Copiar mensagem</button><a class="guest-wa" href="'+escAttr(wa)+'" target="_blank" rel="noopener">Enviar WhatsApp</a><button type="button" data-delete="'+g.id+'">Apagar</button></div></article>'
   }).join('');
   list.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.copy);show('✓ Link copiado para enviar ao convidado.')});
-  list.querySelectorAll('[data-message]').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(decodeURIComponent(b.dataset.message));show('✓ Mensagem actualizada copiada com o link personalizado.')});
+  list.querySelectorAll('[data-message-id]').forEach(b=>b.onclick=async()=>{const message=messages.get(b.dataset.messageId);if(!message)return;await navigator.clipboard.writeText(message);show('✓ Mensagem copiada com o convite personalizado.')});
   list.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteGuest(b.dataset.delete));
   list.querySelectorAll('[data-rsvp]').forEach(s=>s.onchange=()=>updateGuestStatus(s.dataset.rsvp,s.value));
 }
+
 function guestTypeLabel(t){return ({single:'Uma pessoa',couple:'Casal',family:'Família',group:'Grupo'})[t]||t}
 async function addGuest(){
   const type=$('#guestType').value,name1=$('#guestName1').value.trim(),name2=$('#guestName2').value.trim(),count=Math.max(1,Math.min(20,Number($('#guestCount').value)||1));
