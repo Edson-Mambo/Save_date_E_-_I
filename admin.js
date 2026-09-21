@@ -27,7 +27,7 @@ async function loadGuests(){
     return '<article class="guest-card"><div><strong>'+names+'</strong><span>'+guestTypeLabel(g.guest_type)+' · '+g.guest_count+' pessoa(s)</span><span class="guest-link">'+esc(link)+'</span></div><div class="guest-actions"><select data-rsvp="'+g.id+'"><option value="pending" '+(g.rsvp_status==='pending'?'selected':'')+'>Pendente</option><option value="confirmed" '+(g.rsvp_status==='confirmed'?'selected':'')+'>Confirmado</option><option value="declined" '+(g.rsvp_status==='declined'?'selected':'')+'>Não poderá ir</option></select><button type="button" data-copy="'+escAttr(link)+'">Copiar link</button><button type="button" data-message="'+escAttr(message)+'">Copiar mensagem</button><a class="guest-wa" href="'+escAttr(wa)+'" target="_blank" rel="noopener">Enviar WhatsApp</a><button type="button" data-delete="'+g.id+'">Apagar</button></div></article>'
   }).join('');
   list.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.copy);show('✓ Link copiado para enviar ao convidado.')});
-  list.querySelectorAll('[data-message]').forEach(b=>b.onclick=async()=>{const message=buildGuestMessage(b.dataset.message);await navigator.clipboard.writeText(message);show('✓ Mensagem actualizada copiada com o link personalizado.')});
+  list.querySelectorAll('[data-message]').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.message);show('✓ Mensagem actualizada copiada com o link personalizado.')});
   list.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteGuest(b.dataset.delete));
   list.querySelectorAll('[data-rsvp]').forEach(s=>s.onchange=()=>updateGuestStatus(s.dataset.rsvp,s.value));
 }
