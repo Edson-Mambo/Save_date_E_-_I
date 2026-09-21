@@ -11,3 +11,43 @@ async function uploadImage(k,file){if(!file)return show('Primeiro escolha uma im
 async function clearImage(k){const {error}=await sb.from('invitation_content').update({value:'',updated_at:new Date().toISOString()}).eq('field_key',k);if(error)return show(error.message,true);row(k).value='';render();show('Imagem removida: '+row(k).label)}
 $('#loginForm').onsubmit=async e=>{e.preventDefault();const email=$('#email').value.trim();const password=$('#password').value;const btn=e.target.querySelector('button');btn.disabled=true;btn.textContent='A entrar…';const {error}=await sb.auth.signInWithPassword({email,password});btn.disabled=false;btn.textContent='Entrar no painel';$('#loginMsg').textContent=error?'Não foi possível iniciar sessão. Verifica os dados de acesso e a autorização do administrador.':''};
 $('#logout').onclick=()=>sb.auth.signOut();async function init(){const {data}=await sb.auth.getSession();if(data.session){loginView.classList.add('hidden');adminView.classList.remove('hidden');await load()}}sb.auth.onAuthStateChange((_e,session)=>{if(session){loginView.classList.add('hidden');adminView.classList.remove('hidden');load()}else{loginView.classList.remove('hidden');adminView.classList.add('hidden')}});init();
+async function loadGuests(){
+  const {data,error}=await sb.from('invitation_guests').select('*').order('created_at',{ascending:false});
+  if(error){show(error.message,true);return}
+  const list=$('#guestList'); if(!list)return;
+  if(!data?.length){list.innerHTML='<div class="guest-empty">Ainda não há convidados personalizados.</div>';return}
+  const base=window.location.origin+window.location.pathname.replace(/admin\.html$/,'');
+  list.innerHTML=data.map(g=>{
+    const names=g.guest_type==='couple'&&g.name2?esc(g.name1)+' &amp; '+esc(g.name2):esc(g.name1)+(g.name2?' &amp; '+esc(g.name2):'');
+    const link=base+'?guest='+encodeURIComponent(g.token);
+    return '<article class="guest-card"><div><strong>'+names+'</strong><span>'+guestTypeLabel(g.guest_type)+' · '+g.guest_count+' pessoa(s)</span><span class="guest-link">'+esc(link)+'</span></div><div class="guest-actions"><select data-rsvp="'+g.id+'"><option value="pending" '+(g.rsvp_status==='pending'?'selected':'')+'>Pendente</option><option value="confirmed" '+(g.rsvp_status==='confirmed'?'selected':'')+'>Confirmado</option><option value="declined" '+(g.rsvp_status==='declined'?'selected':'')+'>Não poderá ir</option></select><button type="button" data-copy="'+escAttr(link)+'">Copiar link</button><button type="button" data-delete="'+g.id+'">Apagar</button></div></article>'
+  }).join('');
+  list.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.copy);show('✓ Link copiado para enviar ao convidado.')});
+  list.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteGuest(b.dataset.delete));
+  list.querySelectorAll('[data-rsvp]').forEach(s=>s.onchange=()=>updateGuestStatus(s.dataset.rsvp,s.value));
+}
+function guestTypeLabel(t){return ({single:'Uma pessoa',couple:'Casal',family:'Família',group:'Grupo'})[t]||t}
+async function addGuest(){
+  const type=$('#guestType').value,name1=$('#guestName1').value.trim(),name2=$('#guestName2').value.trim(),count=Math.max(1,Math.min(20,Number($('#guestCount').value)||1));
+  if(!name1)return show('Indica pelo menos o primeiro nome.',true);
+  const token=crypto.randomUUID().replaceAll('-','').slice(0,16);
+  const {error}=await sb.from('invitation_guests').insert({token,guest_type:type,name1,name2,guest_count:count});
+  if(error)return show(error.message,true);
+  $('#guestName1').value='';$('#guestName2').value='';$('#guestCount').value=type==='single'?1:2;
+  await loadGuests();show('✓ Convidado criado e link personalizado gerado.');
+}
+async function updateGuestStatus(id,statusValue){
+  const {error}=await sb.from('invitation_guests').update({rsvp_status:statusValue,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)show(error.message,true);else show('Estado da confirmação actualizado.');
+}
+async function deleteGuest(id){
+  if(!confirm('Apagar este convidado e o respectivo link?'))return;
+  const {error}=await sb.from('invitation_guests').delete().eq('id',id);
+  if(error)return show(error.message,true);
+  await loadGuests();show('Convidado removido.');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  $('#addGuest')?.addEventListener('click',addGuest);
+  $('#guestType')?.addEventListener('change',()=>{const t=$('#guestType').value;$('#guestCount').value=t==='single'?1:t==='couple'?2:2});
+  loadGuests();
+});
